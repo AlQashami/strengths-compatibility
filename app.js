@@ -154,10 +154,34 @@ const SHADOW_DOUBLE_LOOKUP = {
   individualization: 'كلاكما يمتلك موهبة الفردية، وقد تبالغان بتخصيص كل شيء لدرجة غياب معايير أو أنظمة موحدة يحتاجها الفريق الأكبر.'
 };
 
-const state = {
-  1: { talents: [] },
-  2: { talents: [] }
-};
+// ---------- Multi-person infrastructure (2-10 people) ----------
+
+const PERSON_COLORS = [
+  { bg: '#6d1a2b', text: '#ffffff' },
+  { bg: '#c9a227', text: '#3c0f1a' },
+  { bg: '#2f6d4a', text: '#ffffff' },
+  { bg: '#2a5d8f', text: '#ffffff' },
+  { bg: '#8a3b6b', text: '#ffffff' },
+  { bg: '#b5872f', text: '#3c0f1a' },
+  { bg: '#3c7a7a', text: '#ffffff' },
+  { bg: '#7a4a2f', text: '#ffffff' },
+  { bg: '#5a4a8f', text: '#ffffff' },
+  { bg: '#4a7a2f', text: '#ffffff' }
+];
+
+function personColor(n) {
+  return PERSON_COLORS[(n - 1) % PERSON_COLORS.length];
+}
+
+const ARABIC_DIGIT_MAP = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
+const ASCII_TO_ARABIC_DIGIT = Object.fromEntries(Object.entries(ARABIC_DIGIT_MAP).map(([ar, en]) => [en, ar]));
+
+function toArabicDigits(num) {
+  return String(num).split('').map(ch => ASCII_TO_ARABIC_DIGIT[ch] || ch).join('');
+}
+
+const state = {};
+let activePersons = [];
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -165,13 +189,106 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function defaultPersonName(n) {
+  if (n === 1) return 'الشخص الأول';
+  if (n === 2) return 'الشخص الثاني';
+  return `الشخص ${toArabicDigits(n)}`;
+}
+
 function getPersonName(n) {
-  const v = document.getElementById(`name-${n}`).value.trim();
-  return v || (n === 1 ? 'الشخص الأول' : 'الشخص الثاني');
+  const el = document.getElementById(`name-${n}`);
+  const v = el ? el.value.trim() : '';
+  return v || defaultPersonName(n);
 }
 
 function domainMeta(key) {
   return DOMAINS.find(d => d.key === key);
+}
+
+function ensurePersonState(n) {
+  if (!state[n]) state[n] = { talents: [] };
+}
+
+function personPanelHTML(n, nameValue) {
+  const color = personColor(n);
+  const badgeNum = toArabicDigits(n);
+  return `<article class="person-panel" data-person="${n}">
+      <div class="panel-head">
+        <span class="person-badge" style="background:${color.bg};color:${color.text}">${badgeNum}</span>
+        <input type="text" class="person-name" id="name-${n}" value="${escapeHtml(nameValue)}" maxlength="30">
+      </div>
+
+      <div class="talent-picker">
+        <label>أضف موهبة</label>
+        <input type="text" class="talent-search" data-person="${n}" placeholder="اكتب اسم الموهبة أو اختر من القائمة...">
+        <div class="talent-dropdown hidden" id="dropdown-${n}"></div>
+      </div>
+
+      <div class="pdf-upload-row">
+        <label class="pdf-upload-btn" for="pdf-upload-${n}">📄 رفع تقرير Gallup (PDF) — تعبئة تلقائية</label>
+        <input type="file" id="pdf-upload-${n}" accept="application/pdf" class="pdf-upload-input">
+        <p class="pdf-upload-status" id="pdf-status-${n}"></p>
+      </div>
+
+      <div class="list-head">
+        <span>الترتيب الحالي</span>
+        <span class="count-tag" id="count-${n}">0 مواهب</span>
+      </div>
+      <ol class="talent-list" id="list-${n}"></ol>
+      <button class="btn-ghost btn-clear" data-person="${n}">مسح الكل</button>
+
+      <div class="profile-box">
+        <div class="profile-row">
+          <input type="text" class="profile-name-input" id="profile-name-${n}" placeholder="اسم البروفايل">
+          <button class="btn-secondary" id="save-${n}">حفظ البروفايل</button>
+        </div>
+        <div class="profile-row">
+          <select class="profile-select" id="profile-select-${n}"></select>
+          <button class="btn-secondary" id="load-${n}">تحميل</button>
+          <button class="btn-danger" id="delete-${n}">حذف</button>
+        </div>
+      </div>
+    </article>`;
+}
+
+function setPersonCount(newCount, opts = {}) {
+  const grid = document.getElementById('people-grid');
+  const oldCount = activePersons.length;
+  newCount = Math.max(2, Math.min(10, newCount));
+
+  if (newCount === oldCount) return;
+
+  if (newCount < oldCount) {
+    const toRemove = activePersons.slice(newCount);
+    const willLose = toRemove.filter(n => state[n] && state[n].talents.length);
+    if (willLose.length && !opts.skipConfirm) {
+      const namesTxt = willLose.map(n => getPersonName(n)).join('، ');
+      if (!confirm(`سيتم حذف بيانات: ${namesTxt}. هل تريد المتابعة؟`)) {
+        const countSelect = document.getElementById('person-count');
+        if (countSelect) countSelect.value = String(oldCount);
+        return;
+      }
+    }
+    toRemove.forEach(n => {
+      const panel = grid.querySelector(`.person-panel[data-person="${n}"]`);
+      if (panel) panel.remove();
+      delete state[n];
+    });
+    activePersons = activePersons.slice(0, newCount);
+  } else {
+    for (let n = oldCount + 1; n <= newCount; n++) {
+      ensurePersonState(n);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = personPanelHTML(n, defaultPersonName(n));
+      grid.appendChild(wrapper.firstElementChild);
+      activePersons.push(n);
+      initPersonPanel(n);
+      renderPersonList(n);
+    }
+  }
+
+  renderSavedProfiles();
+  updateAnalyzeHint();
 }
 
 function buildDropdown(personNum, query) {
@@ -273,9 +390,9 @@ function renderPersonList(personNum) {
 
 function updateAnalyzeHint() {
   const hint = document.getElementById('analyze-hint');
-  const ok1 = state[1].talents.length >= 5;
-  const ok2 = state[2].talents.length >= 5;
-  if (ok1 && ok2) {
+  if (!hint) return;
+  const notReady = activePersons.filter(n => state[n] && state[n].talents.length < 5);
+  if (notReady.length === 0 && activePersons.length >= 2) {
     hint.textContent = 'جاهز للتحليل';
     hint.classList.remove('warn');
   } else {
@@ -298,8 +415,9 @@ function saveProfiles(profiles) {
 
 function renderSavedProfiles() {
   const profiles = getProfiles();
-  [1, 2].forEach(n => {
+  activePersons.forEach(n => {
     const select = document.getElementById(`profile-select-${n}`);
+    if (!select) return;
     const current = select.value;
     select.innerHTML = profiles.length
       ? profiles.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
@@ -385,12 +503,11 @@ function topSet(talentIds, n) {
 }
 
 const RANKED_LINE_RE = /^(\d{1,2})[.)]\s*(.+)$/;
-const ARABIC_DIGIT_MAP = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
 
 function normalizeLine(line) {
   return line
     .replace(/[٠-٩]/g, d => ARABIC_DIGIT_MAP[d])
-    .replace(/\u00A0/g, ' ')
+    .replace(/ /g, ' ')
     .trim();
 }
 
@@ -482,17 +599,71 @@ async function handlePdfUpload(personNum, file) {
   }
 }
 
-function renderDomainsSection(p1Name, p2Name, s1, s2) {
+// ---------- Analysis helpers (shared by pairwise + team-wide sections) ----------
+
+function isDomainStrongFor(scores, n, key) {
+  return scores[n].ranked.slice(0, 2).includes(key) && scores[n].percents[key] > 0;
+}
+
+function domainRelation(scores, a, b) {
+  const sharedStrength = [];
+  const complementary = [];
+  const sharedGap = [];
+  DOMAINS.forEach(d => {
+    const aStrong = isDomainStrongFor(scores, a, d.key);
+    const bStrong = isDomainStrongFor(scores, b, d.key);
+    if (aStrong && bStrong) sharedStrength.push(d);
+    else if (!aStrong && !bStrong) sharedGap.push(d);
+    else if (aStrong) complementary.push({ domain: d, strongN: a, weakN: b });
+    else complementary.push({ domain: d, strongN: b, weakN: a });
+  });
+  return { sharedStrength, complementary, sharedGap };
+}
+
+function computeCompatibility(scores, a, b, sharedCount, synergyCount, frictionCount) {
+  const s1 = scores[a].percents, s2 = scores[b].percents;
+  let alignSum = 0;
+  DOMAINS.forEach(d => { alignSum += 100 - Math.abs(s1[d.key] - s2[d.key]); });
+  const domainAlign = Math.round(alignSum / DOMAINS.length);
+  const sharedContribution = Math.min(sharedCount, 5) * 4;
+  const synergyContribution = Math.min(synergyCount, 6) * 4;
+  const frictionPenalty = frictionCount * 6;
+  const raw = 15 + domainAlign * 0.3 + sharedContribution + synergyContribution - frictionPenalty;
+  const score = Math.max(5, Math.min(98, Math.round(raw)));
+  return { score, domainAlign, sharedContribution, synergyContribution, frictionPenalty, sharedCount, synergyCount, frictionCount };
+}
+
+function compatibilityLabel(score) {
+  if (score >= 80) return 'توافق قوي جداً';
+  if (score >= 65) return 'توافق جيد';
+  if (score >= 45) return 'توافق متوسط، يحتاج تنسيقاً واعياً';
+  return 'توافق تحدٍّ، يتطلب جهداً واضحاً من الطرفين';
+}
+
+function computeCoreSharedTalents(persons, tops) {
+  if (persons.length < 2) return [];
+  const first = [...tops[persons[0]]];
+  return first.filter(id => persons.every(n => tops[n].has(id)));
+}
+
+// ---------- Render: domains ----------
+
+function renderDomainsSection(persons, names, scores) {
   let html = '';
   DOMAINS.forEach(d => {
     html += `<div class="domain-chart-row">
-      <div class="domain-chart-label"><span><span class="domain-dot ${d.dot}"></span> ${escapeHtml(d.ar)}</span></div>
-      <div class="bar-track"><div class="bar-fill p1" style="width:${s1.percents[d.key]}%">${escapeHtml(p1Name)} ${s1.percents[d.key]}%</div></div>
-      <div class="bar-track"><div class="bar-fill p2" style="width:${s2.percents[d.key]}%">${escapeHtml(p2Name)} ${s2.percents[d.key]}%</div></div>
-    </div>`;
+      <div class="domain-chart-label"><span><span class="domain-dot ${d.dot}"></span> ${escapeHtml(d.ar)}</span></div>`;
+    persons.forEach(n => {
+      const color = personColor(n);
+      const pct = scores[n].percents[d.key];
+      html += `<div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color.bg};color:${color.text}">${escapeHtml(names[n])} ${pct}%</div></div>`;
+    });
+    html += `</div>`;
   });
   return html;
 }
+
+// ---------- Render: connection map (operates on exactly one pair) ----------
 
 function renderConnectionMapSection(p1Name, p2Name, arr1, arr2, sharedTalentIds, synergyMatches, frictionMatches) {
   const rowHeight = 34;
@@ -571,119 +742,166 @@ function renderConnectionMapSection(p1Name, p2Name, arr1, arr2, sharedTalentIds,
   return `<div class="map-wrap">${svg}</div>${legend}${table}`;
 }
 
-function renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames, synergyMatches) {
-  const isStrong = (scores, ranked, key) => ranked.slice(0, 2).includes(key) && scores[key] > 0;
+// ---------- Render: overlap (per pair + team-wide summary) ----------
 
-  const sharedStrength = [];
-  const complementary = [];
-  const sharedGap = [];
+function renderOverlapSection(persons, names, scores, tops, pairs) {
+  let html = '';
 
-  DOMAINS.forEach(d => {
-    const p1Strong = isStrong(s1.percents, s1.ranked, d.key);
-    const p2Strong = isStrong(s2.percents, s2.ranked, d.key);
+  if (persons.length > 2) {
+    const avgScore = Math.round(pairs.reduce((s, p) => s + p.score, 0) / pairs.length);
+    html += `<div class="score-badge-row"><span class="score-badge">متوسط التوافق العام للفريق: ${avgScore}%</span><span class="score-label">${compatibilityLabel(avgScore)}</span></div>`;
 
-    if (p1Strong && p2Strong) sharedStrength.push(d);
-    else if (!p1Strong && !p2Strong) sharedGap.push(d);
-    else if (p1Strong) complementary.push({ domain: d, strong: p1Name, weak: p2Name });
-    else complementary.push({ domain: d, strong: p2Name, weak: p1Name });
-  });
-
-  let html = '<div class="subhead">المواهب المشتركة (لغة مشتركة)</div>';
-  if (sharedTalentNames.length) {
-    html += `<div class="chip-row">${sharedTalentNames.map(n => `<span class="chip">${escapeHtml(n)}</span>`).join('')}</div>`;
-    html += `<p>وجود هذه المواهب عند الطرفين يعني تفاهماً سريعاً وأسلوب عمل مألوف للاثنين دون حاجة لشرح طويل.</p>`;
-  } else {
-    html += `<p>لا توجد مواهب فردية متطابقة ضمن أبرز مواهب الطرفين، لكن هذا لا يمنع وجود توافق على مستوى الدومينز.</p>`;
+    const core = computeCoreSharedTalents(persons, tops);
+    html += '<div class="subhead">مواهب أساسية مشتركة بين كل أفراد الفريق</div>';
+    html += core.length
+      ? `<div class="chip-row">${core.map(id => `<span class="chip">${escapeHtml(talentLabel(id))}</span>`).join('')}</div><p>هذه المواهب موجودة عند جميع أفراد الفريق دون استثناء، وتشكل "اللغة المشتركة" أو الثقافة الأساسية للفريق ككل.</p>`
+      : `<p>لا توجد موهبة واحدة مشتركة بين جميع أفراد الفريق دفعة واحدة، وهذا طبيعي كلما زاد عدد الأفراد؛ التوافق هنا يُبنى غالباً على أزواج متكاملة أكثر من قاسم مشترك واحد للجميع.</p>`;
   }
 
-  html += '<div class="subhead">دومينز القوة المشتركة</div>';
-  html += sharedStrength.length
-    ? `<ul>${sharedStrength.map(d => `<li><strong>${escapeHtml(d.ar)}</strong>: كلا الطرفين قوي فيه، يشكل أرضية مشتركة راسخة للعمل.</li>`).join('')}</ul>`
-    : `<p>لا يوجد دومين يشترك فيه الطرفان كأعلى دومين لديهما.</p>`;
+  const multi = pairs.length > 1;
+  pairs.forEach(pair => {
+    const { a, b, sharedNames, synergyMatches, frictionMatches, score, breakdown } = pair;
+    const rel = domainRelation(scores, a, b);
 
-  html += '<div class="subhead">المواهب المكمّلة (تغطية الفجوات)</div>';
-  html += complementary.length
-    ? `<ul>${complementary.map(c => `<li><strong>${escapeHtml(c.domain.ar)}</strong>: نقطة قوة عند ${escapeHtml(c.strong)} ونقطة ضعف نسبية عند ${escapeHtml(c.weak)}، ما يعني أن هذه الفجوة عند ${escapeHtml(c.weak)} مغطاة من جهة ${escapeHtml(c.strong)}.</li>`).join('')}</ul>`
-    : `<p>لا يوجد تكامل واضح على مستوى الدومينز بين الطرفين حالياً.</p>`;
+    let pairHtml = `<div class="score-badge-row"><span class="score-badge">درجة التوافق: ${score}%</span><span class="score-label">${compatibilityLabel(score)}</span></div>`;
+    pairHtml += `<p class="score-explain">يعتمد هذا الرقم على: محاذاة الدومينز (${breakdown.domainAlign}%)، ${sharedNames.length} موهبة مشتركة، ${synergyMatches.length} توليفة تكامل إيجابي، و${frictionMatches.length} نقطة احتكاك محتملة.</p>`;
 
-  html += '<div class="subhead">تكامل على مستوى المواهب الفردية</div>';
-  html += synergyMatches.length
-    ? `<ul>${synergyMatches.map(m => `<li><strong>${escapeHtml(talentLabel(m.id1))}</strong> + <strong>${escapeHtml(talentLabel(m.id2))}</strong>: ${m.text}</li>`).join('')}</ul>`
-    : `<p>لا توجد توليفة مواهب معروفة بينهما ضمن قواعد التكامل الفردي حالياً، لكن هذا لا ينفي وجود تكامل على مستوى الدومينز أعلاه.</p>`;
-
-  html += '<div class="subhead">الفجوات المشتركة (تحتاج طرف ثالث)</div>';
-  html += sharedGap.length
-    ? `<ul>${sharedGap.map(d => `<li><strong>${escapeHtml(d.ar)}</strong>: كلا الطرفين ضعيف نسبياً فيه، ولا أحد يغطي هذه الفجوة عن الآخر.</li>`).join('')}</ul>`
-    : `<p>لا توجد فجوة دومين يشترك فيها الطرفان، وهذه إشارة جيدة لاكتفاء الثنائي ذاتياً.</p>`;
-
-  return { html, sharedGap };
-}
-
-function renderDynamicsSection(p1Name, p2Name, s1, s2, talents1, talents2) {
-  let rows = '';
-  DOMAINS.forEach(d => {
-    const v1 = s1.percents[d.key];
-    const v2 = s2.percents[d.key];
-    const lead1 = leadTalentInDomain(talents1, d.key);
-    const lead2 = leadTalentInDomain(talents2, d.key);
-    let leader, detail;
-
-    if (Math.abs(v1 - v2) < 5) {
-      leader = 'متكافئ بينهما';
-      const parts = [];
-      if (lead1) parts.push(`${escapeHtml(p1Name)}: ${escapeHtml(talentLabel(lead1))}`);
-      if (lead2) parts.push(`${escapeHtml(p2Name)}: ${escapeHtml(talentLabel(lead2))}`);
-      detail = `${escapeHtml(d.lead)}${parts.length ? ' — أبرز موهبة لكل طرف هنا: ' + parts.join('، ') : ''}`;
+    pairHtml += '<div class="subhead">المواهب المشتركة (لغة مشتركة)</div>';
+    if (sharedNames.length) {
+      pairHtml += `<div class="chip-row">${sharedNames.map(nm => `<span class="chip">${escapeHtml(nm)}</span>`).join('')}</div>`;
+      pairHtml += `<p>وجود هذه المواهب عند الطرفين يعني تفاهماً سريعاً وأسلوب عمل مألوف للاثنين دون حاجة لشرح طويل.</p>`;
     } else {
-      const leaderIsP1 = v1 > v2;
-      leader = leaderIsP1 ? escapeHtml(p1Name) : escapeHtml(p2Name);
-      const leadTalent = leaderIsP1 ? lead1 : lead2;
-      detail = `${escapeHtml(d.lead)}${leadTalent ? ' — أبرز ما يقود به: ' + escapeHtml(talentLabel(leadTalent)) : ''}`;
+      pairHtml += `<p>لا توجد مواهب فردية متطابقة ضمن أبرز مواهب الطرفين، لكن هذا لا يمنع وجود توافق على مستوى الدومينز.</p>`;
     }
 
-    rows += `<tr><td>${escapeHtml(d.ar)}</td><td>${v1}%</td><td>${v2}%</td><td>${leader}</td><td>${detail}</td></tr>`;
+    pairHtml += '<div class="subhead">دومينز القوة المشتركة</div>';
+    pairHtml += rel.sharedStrength.length
+      ? `<ul>${rel.sharedStrength.map(d => `<li><strong>${escapeHtml(d.ar)}</strong>: كلا الطرفين قوي فيه، يشكل أرضية مشتركة راسخة للعمل.</li>`).join('')}</ul>`
+      : `<p>لا يوجد دومين يشترك فيه الطرفان كأعلى دومين لديهما.</p>`;
+
+    pairHtml += '<div class="subhead">المواهب المكمّلة (تغطية الفجوات)</div>';
+    pairHtml += rel.complementary.length
+      ? `<ul>${rel.complementary.map(c => `<li><strong>${escapeHtml(c.domain.ar)}</strong>: نقطة قوة عند ${escapeHtml(names[c.strongN])} ونقطة ضعف نسبية عند ${escapeHtml(names[c.weakN])}، ما يعني أن هذه الفجوة عند ${escapeHtml(names[c.weakN])} مغطاة من جهة ${escapeHtml(names[c.strongN])}.</li>`).join('')}</ul>`
+      : `<p>لا يوجد تكامل واضح على مستوى الدومينز بين الطرفين حالياً.</p>`;
+
+    pairHtml += '<div class="subhead">تكامل على مستوى المواهب الفردية</div>';
+    pairHtml += synergyMatches.length
+      ? `<ul>${synergyMatches.map(m => `<li><strong>${escapeHtml(talentLabel(m.id1))}</strong> + <strong>${escapeHtml(talentLabel(m.id2))}</strong>: ${m.text}</li>`).join('')}</ul>`
+      : `<p>لا توجد توليفة مواهب معروفة بينهما ضمن قواعد التكامل الفردي حالياً، لكن هذا لا ينفي وجود تكامل على مستوى الدومينز أعلاه.</p>`;
+
+    pairHtml += '<div class="subhead">الفجوات المشتركة بينهما (تحتاج طرفاً آخر)</div>';
+    pairHtml += rel.sharedGap.length
+      ? `<ul>${rel.sharedGap.map(d => `<li><strong>${escapeHtml(d.ar)}</strong>: كلا الطرفين ضعيف نسبياً فيه، ولا أحد منهما يغطي هذه الفجوة عن الآخر.</li>`).join('')}</ul>`
+      : `<p>لا توجد فجوة دومين يشترك فيها الطرفان، وهذه إشارة جيدة لاكتفائهما ذاتياً.</p>`;
+
+    html += multi
+      ? `<div class="pair-block"><h3 class="pair-heading">${escapeHtml(names[a])} × ${escapeHtml(names[b])}</h3>${pairHtml}</div>`
+      : pairHtml;
   });
 
-  let html = `<table class="dynamics-table">
-    <thead><tr><th>الدومين</th><th>${escapeHtml(p1Name)}</th><th>${escapeHtml(p2Name)}</th><th>من يقود عادة</th><th>ماذا يعني ذلك عملياً</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
-
-  const actionDomains = ['executing', 'influencing'];
-  const thoughtDomains = ['relationship', 'strategic'];
-  const p1Top = s1.ranked[0];
-  const p2Top = s2.ranked[0];
-  const p1IsAction = actionDomains.includes(p1Top);
-  const p2IsAction = actionDomains.includes(p2Top);
-
-  if (p1IsAction !== p2IsAction) {
-    const actionPerson = p1IsAction ? p1Name : p2Name;
-    const thoughtPerson = p1IsAction ? p2Name : p1Name;
-    html += `<p class="subhead">الخلاصة</p><p>بشكل عام، تميل قيادة الجوانب العملية والتنفيذية لتكون من جهة ${escapeHtml(actionPerson)}، بينما تميل قيادة الجوانب الفكرية أو العلاقاتية لتكون من جهة ${escapeHtml(thoughtPerson)}؛ توزيع أدوار طبيعي إذا اتفقتما عليه صراحة.</p>`;
-  }
-
   return html;
 }
 
-function renderCommunicationSection(p1Name, p2Name, frictionMatches, sharedTalentNames) {
+// ---------- Render: dynamics (per pair + team leaderboard) ----------
+
+function renderDynamicsSection(persons, names, scores, talents, pairs) {
   let html = '';
-  if (sharedTalentNames.length) {
-    html += `<p>امتلاككما لموهبة ${sharedTalentNames.map(n => `<strong>${escapeHtml(n)}</strong>`).join('، ')} المشتركة يمنحكما لغة مشتركة وفهماً سريعاً لبعضكما في هذا الجانب.</p>`;
+
+  if (persons.length > 2) {
+    html += '<div class="subhead">قيادة كل دومين على مستوى الفريق</div>';
+    html += '<table class="dynamics-table"><thead><tr><th>الدومين</th><th>الترتيب من الأقوى للأضعف</th></tr></thead><tbody>';
+    DOMAINS.forEach(d => {
+      const ranked = [...persons].sort((x, y) => scores[y].percents[d.key] - scores[x].percents[d.key]);
+      const cells = ranked.map(n => {
+        const lead = leadTalentInDomain(talents[n], d.key);
+        const leadTxt = lead ? ` (${escapeHtml(talentLabel(lead))})` : '';
+        return `${escapeHtml(names[n])}: ${scores[n].percents[d.key]}%${leadTxt}`;
+      }).join(' > ');
+      html += `<tr><td>${escapeHtml(d.ar)}</td><td>${cells}</td></tr>`;
+    });
+    html += '</tbody></table>';
   }
 
-  html += '<div class="subhead">نقاط الاحتكاك المحتملة</div>';
-  if (frictionMatches.length) {
-    html += `<ul>${frictionMatches.map(m => `<li>${m.text}</li>`).join('')}</ul>`;
-  } else {
-    html += `<p>لا توجد أنماط احتكاك معروفة بارزة بين أبرز مواهبكما، وهذا مؤشر جيد لسهولة التواصل بينكما.</p>`;
-  }
+  const multi = pairs.length > 1;
+  pairs.forEach(pair => {
+    const { a, b } = pair;
+    const s1 = scores[a], s2 = scores[b];
+    let rows = '';
+    DOMAINS.forEach(d => {
+      const v1 = s1.percents[d.key];
+      const v2 = s2.percents[d.key];
+      const lead1 = leadTalentInDomain(talents[a], d.key);
+      const lead2 = leadTalentInDomain(talents[b], d.key);
+      let leader, detail;
 
-  html += `<div class="subhead">نصيحة عملية</div><p>عند الاختلاف، اتفقا مسبقاً على "قاعدة تحكيم" بسيطة: من يحسم في مواضيع التنفيذ السريع، ومن يحسم في مواضيع تتطلب تروٍّ أو تحليلاً، بدل أن يتكرر الخلاف على نفس النقطة في كل مرة.</p>`;
+      if (Math.abs(v1 - v2) < 5) {
+        leader = 'متكافئ بينهما';
+        const parts = [];
+        if (lead1) parts.push(`${escapeHtml(names[a])}: ${escapeHtml(talentLabel(lead1))}`);
+        if (lead2) parts.push(`${escapeHtml(names[b])}: ${escapeHtml(talentLabel(lead2))}`);
+        detail = `${escapeHtml(d.lead)}${parts.length ? ' — أبرز موهبة لكل طرف هنا: ' + parts.join('، ') : ''}`;
+      } else {
+        const leaderIsA = v1 > v2;
+        leader = leaderIsA ? escapeHtml(names[a]) : escapeHtml(names[b]);
+        const leadTalent = leaderIsA ? lead1 : lead2;
+        detail = `${escapeHtml(d.lead)}${leadTalent ? ' — أبرز ما يقود به: ' + escapeHtml(talentLabel(leadTalent)) : ''}`;
+      }
+
+      rows += `<tr><td>${escapeHtml(d.ar)}</td><td>${v1}%</td><td>${v2}%</td><td>${leader}</td><td>${detail}</td></tr>`;
+    });
+
+    let pairHtml = `<table class="dynamics-table">
+      <thead><tr><th>الدومين</th><th>${escapeHtml(names[a])}</th><th>${escapeHtml(names[b])}</th><th>من يقود عادة</th><th>ماذا يعني ذلك عملياً</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+    const actionDomains = ['executing', 'influencing'];
+    const p1Top = s1.ranked[0];
+    const p2Top = s2.ranked[0];
+    const p1IsAction = actionDomains.includes(p1Top);
+    const p2IsAction = actionDomains.includes(p2Top);
+
+    if (p1IsAction !== p2IsAction) {
+      const actionPerson = p1IsAction ? names[a] : names[b];
+      const thoughtPerson = p1IsAction ? names[b] : names[a];
+      pairHtml += `<p class="subhead">الخلاصة</p><p>بشكل عام، تميل قيادة الجوانب العملية والتنفيذية لتكون من جهة ${escapeHtml(actionPerson)}، بينما تميل قيادة الجوانب الفكرية أو العلاقاتية لتكون من جهة ${escapeHtml(thoughtPerson)}؛ توزيع أدوار طبيعي إذا اتفقتما عليه صراحة.</p>`;
+    }
+
+    html += multi
+      ? `<div class="pair-block"><h3 class="pair-heading">${escapeHtml(names[a])} × ${escapeHtml(names[b])}</h3>${pairHtml}</div>`
+      : pairHtml;
+  });
 
   return html;
 }
 
-function renderCreativitySection(p1Name, p2Name, top1, top2) {
+// ---------- Render: communication (per pair) ----------
+
+function renderCommunicationSection(persons, names, pairs) {
+  const multi = pairs.length > 1;
+  return pairs.map(pair => {
+    const { a, b, sharedNames, frictionMatches } = pair;
+    let html = '';
+    if (sharedNames.length) {
+      html += `<p>امتلاككما لموهبة ${sharedNames.map(nm => `<strong>${escapeHtml(nm)}</strong>`).join('، ')} المشتركة يمنحكما لغة مشتركة وفهماً سريعاً لبعضكما في هذا الجانب.</p>`;
+    }
+
+    html += '<div class="subhead">نقاط الاحتكاك المحتملة</div>';
+    html += frictionMatches.length
+      ? `<ul>${frictionMatches.map(m => `<li>${m.text}</li>`).join('')}</ul>`
+      : `<p>لا توجد أنماط احتكاك معروفة بارزة بين أبرز مواهبكما، وهذا مؤشر جيد لسهولة التواصل بينكما.</p>`;
+
+    html += `<div class="subhead">نصيحة عملية</div><p>عند الاختلاف، اتفقا مسبقاً على "قاعدة تحكيم" بسيطة: من يحسم في مواضيع التنفيذ السريع، ومن يحسم في مواضيع تتطلب تروٍّ أو تحليلاً، بدل أن يتكرر الخلاف على نفس النقطة في كل مرة.</p>`;
+
+    return multi
+      ? `<div class="pair-block"><h3 class="pair-heading">${escapeHtml(names[a])} × ${escapeHtml(names[b])}</h3>${html}</div>`
+      : html;
+  }).join('');
+}
+
+// ---------- Render: creativity (per pair) ----------
+
+function renderCreativityForPair(p1Name, p2Name, top1, top2) {
   const ST = ['analytical', 'context', 'futuristic', 'ideation', 'input', 'intellection', 'learner', 'strategic'];
   const p1ST = ST.filter(id => top1.has(id));
   const p2ST = ST.filter(id => top2.has(id));
@@ -715,73 +933,147 @@ function renderCreativitySection(p1Name, p2Name, top1, top2) {
   return html;
 }
 
-function renderShadowSection(p1Name, p2Name, sharedTalentIds) {
-  if (!sharedTalentIds.length) {
-    return `<p>لا توجد مواهب مضاعفة (مشتركة بقوة) بين الطرفين ضمن أبرز مواهبهما، لذا لا يوجد خطر مبالغة واضح ناتج عن ازدواج نفس الموهبة.</p>`;
-  }
-
-  const items = sharedTalentIds.map(id => {
-    const name = talentLabel(id);
-    const specific = SHADOW_DOUBLE_LOOKUP[id];
-    const text = specific || `قوة "${escapeHtml(name)}" مضاعفة عند الطرفين يعني ميلاً مشتركاً لنفس السلوك دون طرف يوازنه؛ راقبا المبالغة فيه دون رقيب داخلي للفريق.`;
-    return `<li><strong>${escapeHtml(name)}</strong>: ${text}</li>`;
-  });
-
-  return `<ul>${items.join('')}</ul>`;
+function renderCreativitySection(persons, names, tops, pairs) {
+  const multi = pairs.length > 1;
+  return pairs.map(pair => {
+    const { a, b } = pair;
+    const html = renderCreativityForPair(names[a], names[b], tops[a], tops[b]);
+    return multi
+      ? `<div class="pair-block"><h3 class="pair-heading">${escapeHtml(names[a])} × ${escapeHtml(names[b])}</h3>${html}</div>`
+      : html;
+  }).join('');
 }
 
-function renderRecommendationSection(p1Name, p2Name, sharedGapDomains) {
-  if (!sharedGapDomains.length) {
-    return `<p>الثنائي مكتفٍ ذاتياً بشكل جيد: يغطي مجالات الدومينز الأربعة معاً دون فجوة مشتركة واضحة. أي تحديات ستكون على مستوى التنسيق بينكما أكثر من نقص جوهري بالمواهب.</p>`;
+// ---------- Render: shadow side (per pair) ----------
+
+function renderShadowSection(persons, names, pairs) {
+  const multi = pairs.length > 1;
+  return pairs.map(pair => {
+    const { a, b, sharedIds } = pair;
+    let html;
+    if (!sharedIds.length) {
+      html = `<p>لا توجد مواهب مضاعفة (مشتركة بقوة) بين الطرفين ضمن أبرز مواهبهما، لذا لا يوجد خطر مبالغة واضح ناتج عن ازدواج نفس الموهبة.</p>`;
+    } else {
+      const items = sharedIds.map(id => {
+        const name = talentLabel(id);
+        const specific = SHADOW_DOUBLE_LOOKUP[id];
+        const text = specific || `قوة "${escapeHtml(name)}" مضاعفة عند الطرفين يعني ميلاً مشتركاً لنفس السلوك دون طرف يوازنه؛ راقبا المبالغة فيه دون رقيب داخلي للفريق.`;
+        return `<li><strong>${escapeHtml(name)}</strong>: ${text}</li>`;
+      });
+      html = `<ul>${items.join('')}</ul>`;
+    }
+    return multi
+      ? `<div class="pair-block"><h3 class="pair-heading">${escapeHtml(names[a])} × ${escapeHtml(names[b])}</h3>${html}</div>`
+      : html;
+  }).join('');
+}
+
+// ---------- Render: recommendation (team-wide gap; generalizes the 2-person case) ----------
+
+function renderRecommendationSection(persons, names, scores) {
+  const teamGap = DOMAINS.filter(d => persons.every(n => !isDomainStrongFor(scores, n, d.key)));
+  const isTeam = persons.length > 2;
+
+  if (!teamGap.length) {
+    return isTeam
+      ? `<p>الفريق مكتفٍ ذاتياً بشكل جيد: يغطي مجالات الدومينز الأربعة معاً دون فجوة يشترك فيها جميع الأفراد. أي تحديات ستكون على مستوى التنسيق بين الأدوار أكثر من نقص جوهري بالمواهب.</p>`
+      : `<p>الثنائي مكتفٍ ذاتياً بشكل جيد: يغطي مجالات الدومينز الأربعة معاً دون فجوة مشتركة واضحة. أي تحديات ستكون على مستوى التنسيق بينكما أكثر من نقص جوهري بالمواهب.</p>`;
   }
 
-  const domainList = sharedGapDomains.map(d => `<strong>${escapeHtml(d.ar)}</strong>`).join(' و');
-  const suggestions = sharedGapDomains.map(d => {
+  const domainList = teamGap.map(d => `<strong>${escapeHtml(d.ar)}</strong>`).join(' و');
+  const suggestions = teamGap.map(d => {
     const talentNames = DOMAIN_GAP_SUGGESTIONS[d.key].map(id => talentLabel(id)).join('، ');
-    return `<li>لتغطية دومين "${escapeHtml(d.ar)}": ابحثا عن عضو ثالث تبرز عنده مواهب مثل ${talentNames}.</li>`;
+    return `<li>لتغطية دومين "${escapeHtml(d.ar)}": ابحثوا عن عضو إضافي تبرز عنده مواهب مثل ${talentNames}.</li>`;
   }).join('');
 
-  return `<p>يُنصح بإضافة عضو ثالث للفريق يمتلك مواهب قوية في مجال ${domainList}، لأن كلا الطرفين لديه ضعف نسبي فيه ولا أحد يغطي هذه الفجوة عن الآخر.</p><ul>${suggestions}</ul>`;
+  const intro = isTeam
+    ? `<p>يُنصح بإضافة عضو جديد للفريق يمتلك مواهب قوية في مجال ${domainList}، لأن جميع أفراد الفريق الحاليين لديهم ضعف نسبي فيه ولا أحد منهم يغطي هذه الفجوة عن الآخرين.</p>`
+    : `<p>يُنصح بإضافة عضو ثالث للفريق يمتلك مواهب قوية في مجال ${domainList}، لأن كلا الطرفين لديه ضعف نسبي فيه ولا أحد يغطي هذه الفجوة عن الآخر.</p>`;
+
+  return `${intro}<ul>${suggestions}</ul>`;
 }
 
+// ---------- Main analysis ----------
+
 function analyze() {
-  if (state[1].talents.length < 5 || state[2].talents.length < 5) {
+  const notReady = activePersons.filter(n => state[n].talents.length < 5);
+  if (notReady.length || activePersons.length < 2) {
     updateAnalyzeHint();
     return;
   }
 
-  const p1Name = getPersonName(1);
-  const p2Name = getPersonName(2);
+  const names = {};
+  const talents = {};
+  const scores = {};
+  const tops = {};
+  activePersons.forEach(n => {
+    names[n] = getPersonName(n);
+    talents[n] = state[n].talents;
+    scores[n] = computeDomainScores(talents[n]);
+    tops[n] = topSet(talents[n], 10);
+  });
 
-  const talents1 = state[1].talents;
-  const talents2 = state[2].talents;
+  const pairs = [];
+  for (let i = 0; i < activePersons.length; i++) {
+    for (let j = i + 1; j < activePersons.length; j++) {
+      const a = activePersons[i], b = activePersons[j];
+      const sharedIds = [...tops[a]].filter(id => tops[b].has(id));
+      const sharedNames = sharedIds.map(id => talentLabel(id));
+      const synergyMatches = computePairMatches(talents[a], talents[b], PAIR_SYNERGY_RULES);
+      const frictionMatches = computePairMatches(talents[a], talents[b], FRICTION_RULES);
+      const breakdown = computeCompatibility(scores, a, b, sharedIds.length, synergyMatches.length, frictionMatches.length);
+      pairs.push({ a, b, sharedIds, sharedNames, synergyMatches, frictionMatches, score: breakdown.score, breakdown });
+    }
+  }
 
-  const s1 = computeDomainScores(talents1);
-  const s2 = computeDomainScores(talents2);
+  document.getElementById('domains-body').innerHTML = renderDomainsSection(activePersons, names, scores);
 
-  const top1 = topSet(talents1, 10);
-  const top2 = topSet(talents2, 10);
+  const mapSelectorHTML = activePersons.length > 2 ? `
+    <div class="pair-selector-row">
+      <label>اختر شخصين لعرض خريطة الترابط بينهما:</label>
+      <select id="map-person-a"></select>
+      <span class="pair-x">×</span>
+      <select id="map-person-b"></select>
+    </div>` : '';
+  document.getElementById('map-body').innerHTML = `${mapSelectorHTML}<div id="map-render-target"></div>`;
 
-  const sharedTalentIds = [...top1].filter(id => top2.has(id));
-  const sharedTalentNames = sharedTalentIds.map(id => talentLabel(id));
+  function renderMapFor(a, b) {
+    const sharedIds = [...tops[a]].filter(id => tops[b].has(id));
+    const synergyMatches = computePairMatches(talents[a], talents[b], PAIR_SYNERGY_RULES);
+    const frictionMatches = computePairMatches(talents[a], talents[b], FRICTION_RULES);
+    document.getElementById('map-render-target').innerHTML = renderConnectionMapSection(
+      names[a], names[b], talents[a].slice(0, 8), talents[b].slice(0, 8), sharedIds, synergyMatches, frictionMatches
+    );
+  }
 
-  const synergyMatches = computePairMatches(talents1, talents2, PAIR_SYNERGY_RULES);
-  const frictionMatches = computePairMatches(talents1, talents2, FRICTION_RULES);
+  if (activePersons.length > 2) {
+    const selA = document.getElementById('map-person-a');
+    const selB = document.getElementById('map-person-b');
+    activePersons.forEach(n => {
+      selA.innerHTML += `<option value="${n}">${escapeHtml(names[n])}</option>`;
+      selB.innerHTML += `<option value="${n}">${escapeHtml(names[n])}</option>`;
+    });
+    selA.value = activePersons[0];
+    selB.value = activePersons[1];
+    const onChange = () => {
+      const a = parseInt(selA.value, 10);
+      const b = parseInt(selB.value, 10);
+      if (a === b) return;
+      renderMapFor(a, b);
+    };
+    selA.addEventListener('change', onChange);
+    selB.addEventListener('change', onChange);
+    renderMapFor(activePersons[0], activePersons[1]);
+  } else {
+    renderMapFor(activePersons[0], activePersons[1]);
+  }
 
-  document.getElementById('domains-body').innerHTML = renderDomainsSection(p1Name, p2Name, s1, s2);
-
-  document.getElementById('map-body').innerHTML = renderConnectionMapSection(
-    p1Name, p2Name, talents1.slice(0, 8), talents2.slice(0, 8), sharedTalentIds, synergyMatches, frictionMatches
-  );
-
-  const overlap = renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames, synergyMatches);
-  document.getElementById('overlap-body').innerHTML = overlap.html;
-
-  document.getElementById('dynamics-body').innerHTML = renderDynamicsSection(p1Name, p2Name, s1, s2, talents1, talents2);
-  document.getElementById('communication-body').innerHTML = renderCommunicationSection(p1Name, p2Name, frictionMatches, sharedTalentNames);
-  document.getElementById('creativity-body').innerHTML = renderCreativitySection(p1Name, p2Name, top1, top2);
-  document.getElementById('shadow-body').innerHTML = renderShadowSection(p1Name, p2Name, sharedTalentIds);
-  document.getElementById('recommendation-body').innerHTML = renderRecommendationSection(p1Name, p2Name, overlap.sharedGap);
+  document.getElementById('overlap-body').innerHTML = renderOverlapSection(activePersons, names, scores, tops, pairs);
+  document.getElementById('dynamics-body').innerHTML = renderDynamicsSection(activePersons, names, scores, talents, pairs);
+  document.getElementById('communication-body').innerHTML = renderCommunicationSection(activePersons, names, pairs);
+  document.getElementById('creativity-body').innerHTML = renderCreativitySection(activePersons, names, tops, pairs);
+  document.getElementById('shadow-body').innerHTML = renderShadowSection(activePersons, names, pairs);
+  document.getElementById('recommendation-body').innerHTML = renderRecommendationSection(activePersons, names, scores);
 
   const results = document.getElementById('results');
   results.classList.remove('hidden');
@@ -826,9 +1118,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
-  initPersonPanel(1);
-  initPersonPanel(2);
-  renderSavedProfiles();
+
+  setPersonCount(2, { skipConfirm: true });
+
+  const countSelect = document.getElementById('person-count');
+  if (countSelect) {
+    countSelect.addEventListener('change', (e) => {
+      setPersonCount(parseInt(e.target.value, 10));
+    });
+  }
+
   updateAnalyzeHint();
   document.getElementById('analyze-btn').addEventListener('click', analyze);
 });

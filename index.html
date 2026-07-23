@@ -6,96 +6,33 @@
 <title>أداة توافق المواهب — CliftonStrengths</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
 <header class="site-header">
   <h1>أداة توافق المواهب</h1>
-  <p class="subtitle">تحليل التوافق بين شخصين بناءً على نتائج CliftonStrengths</p>
+  <p class="subtitle">تحليل التوافق بين شخصين (أو فريق حتى ١٠ أشخاص) بناءً على نتائج CliftonStrengths</p>
 </header>
 
 <main class="container">
 
-  <section class="people-grid">
+  <div class="person-count-bar">
+    <label for="person-count">عدد الأشخاص</label>
+    <select id="person-count">
+      <option value="2">٢ (افتراضي)</option>
+      <option value="3">٣</option>
+      <option value="4">٤</option>
+      <option value="5">٥</option>
+      <option value="6">٦</option>
+      <option value="7">٧</option>
+      <option value="8">٨</option>
+      <option value="9">٩</option>
+      <option value="10">١٠</option>
+    </select>
+  </div>
 
-    <article class="person-panel" data-person="1">
-      <div class="panel-head">
-        <span class="person-badge badge-1">١</span>
-        <input type="text" class="person-name" id="name-1" value="الشخص الأول" maxlength="30">
-      </div>
-
-      <div class="talent-picker">
-        <label>أضف موهبة</label>
-        <input type="text" class="talent-search" data-person="1" placeholder="اكتب اسم الموهبة أو اختر من القائمة...">
-        <div class="talent-dropdown hidden" id="dropdown-1"></div>
-      </div>
-
-      <div class="pdf-upload-row">
-        <label class="pdf-upload-btn" for="pdf-upload-1">📄 رفع تقرير Gallup (PDF) — تعبئة تلقائية</label>
-        <input type="file" id="pdf-upload-1" accept="application/pdf" class="pdf-upload-input">
-        <p class="pdf-upload-status" id="pdf-status-1"></p>
-      </div>
-
-      <div class="list-head">
-        <span>الترتيب الحالي</span>
-        <span class="count-tag" id="count-1">0 مواهب</span>
-      </div>
-      <ol class="talent-list" id="list-1"></ol>
-      <button class="btn-ghost btn-clear" data-person="1">مسح الكل</button>
-
-      <div class="profile-box">
-        <div class="profile-row">
-          <input type="text" class="profile-name-input" id="profile-name-1" placeholder="اسم البروفايل">
-          <button class="btn-secondary" id="save-1">حفظ البروفايل</button>
-        </div>
-        <div class="profile-row">
-          <select class="profile-select" id="profile-select-1"></select>
-          <button class="btn-secondary" id="load-1">تحميل</button>
-          <button class="btn-danger" id="delete-1">حذف</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="person-panel" data-person="2">
-      <div class="panel-head">
-        <span class="person-badge badge-2">٢</span>
-        <input type="text" class="person-name" id="name-2" value="الشخص الثاني" maxlength="30">
-      </div>
-
-      <div class="talent-picker">
-        <label>أضف موهبة</label>
-        <input type="text" class="talent-search" data-person="2" placeholder="اكتب اسم الموهبة أو اختر من القائمة...">
-        <div class="talent-dropdown hidden" id="dropdown-2"></div>
-      </div>
-
-      <div class="pdf-upload-row">
-        <label class="pdf-upload-btn" for="pdf-upload-2">📄 رفع تقرير Gallup (PDF) — تعبئة تلقائية</label>
-        <input type="file" id="pdf-upload-2" accept="application/pdf" class="pdf-upload-input">
-        <p class="pdf-upload-status" id="pdf-status-2"></p>
-      </div>
-
-      <div class="list-head">
-        <span>الترتيب الحالي</span>
-        <span class="count-tag" id="count-2">0 مواهب</span>
-      </div>
-      <ol class="talent-list" id="list-2"></ol>
-      <button class="btn-ghost btn-clear" data-person="2">مسح الكل</button>
-
-      <div class="profile-box">
-        <div class="profile-row">
-          <input type="text" class="profile-name-input" id="profile-name-2" placeholder="اسم البروفايل">
-          <button class="btn-secondary" id="save-2">حفظ البروفايل</button>
-        </div>
-        <div class="profile-row">
-          <select class="profile-select" id="profile-select-2"></select>
-          <button class="btn-secondary" id="load-2">تحميل</button>
-          <button class="btn-danger" id="delete-2">حذف</button>
-        </div>
-      </div>
-    </article>
-
-  </section>
+  <section class="people-grid" id="people-grid"></section>
 
   <div class="analyze-bar">
     <button class="btn-primary" id="analyze-btn">تحليل التوافق</button>
@@ -153,6 +90,6 @@
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
