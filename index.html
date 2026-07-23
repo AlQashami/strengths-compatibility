@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أداة توافق المواهب — CliftonStrengths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <h1>أداة توافق المواهب</h1>
+  <p class="subtitle">تحليل التوافق بين شخصين بناءً على نتائج CliftonStrengths</p>
+</header>
+
+<main class="container">
+
+  <section class="people-grid">
+
+    <article class="person-panel" data-person="1">
+      <div class="panel-head">
+        <span class="person-badge badge-1">١</span>
+        <input type="text" class="person-name" id="name-1" value="الشخص الأول" maxlength="30">
+      </div>
+
+      <div class="talent-picker">
+        <label>أضف موهبة</label>
+        <input type="text" class="talent-search" data-person="1" placeholder="اكتب اسم الموهبة أو اختر من القائمة...">
+        <div class="talent-dropdown hidden" id="dropdown-1"></div>
+      </div>
+
+      <div class="list-head">
+        <span>الترتيب الحالي</span>
+        <span class="count-tag" id="count-1">0 مواهب</span>
+      </div>
+      <ol class="talent-list" id="list-1"></ol>
+      <button class="btn-ghost btn-clear" data-person="1">مسح الكل</button>
+
+      <div class="profile-box">
+        <div class="profile-row">
+          <input type="text" class="profile-name-input" id="profile-name-1" placeholder="اسم البروفايل">
+          <button class="btn-secondary" id="save-1">حفظ البروفايل</button>
+        </div>
+        <div class="profile-row">
+          <select class="profile-select" id="profile-select-1"></select>
+          <button class="btn-secondary" id="load-1">تحميل</button>
+          <button class="btn-danger" id="delete-1">حذف</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="person-panel" data-person="2">
+      <div class="panel-head">
+        <span class="person-badge badge-2">٢</span>
+        <input type="text" class="person-name" id="name-2" value="الشخص الثاني" maxlength="30">
+      </div>
+
+      <div class="talent-picker">
+        <label>أضف موهبة</label>
+        <input type="text" class="talent-search" data-person="2" placeholder="اكتب اسم الموهبة أو اختر من القائمة...">
+        <div class="talent-dropdown hidden" id="dropdown-2"></div>
+      </div>
+
+      <div class="list-head">
+        <span>الترتيب الحالي</span>
+        <span class="count-tag" id="count-2">0 مواهب</span>
+      </div>
+      <ol class="talent-list" id="list-2"></ol>
+      <button class="btn-ghost btn-clear" data-person="2">مسح الكل</button>
+
+      <div class="profile-box">
+        <div class="profile-row">
+          <input type="text" class="profile-name-input" id="profile-name-2" placeholder="اسم البروفايل">
+          <button class="btn-secondary" id="save-2">حفظ البروفايل</button>
+        </div>
+        <div class="profile-row">
+          <select class="profile-select" id="profile-select-2"></select>
+          <button class="btn-secondary" id="load-2">تحميل</button>
+          <button class="btn-danger" id="delete-2">حذف</button>
+        </div>
+      </div>
+    </article>
+
+  </section>
+
+  <div class="analyze-bar">
+    <button class="btn-primary" id="analyze-btn">تحليل التوافق</button>
+    <p class="hint" id="analyze-hint">أدخل ٥ مواهب على الأقل لكل شخص لبدء التحليل</p>
+  </div>
+
+  <section class="results hidden" id="results">
+
+    <div class="result-card" id="section-domains">
+      <h2>١. توزيع الدومينز</h2>
+      <div class="card-body" id="domains-body"></div>
+    </div>
+
+    <div class="result-card" id="section-overlap">
+      <h2>٢. التكامل مقابل التشابه</h2>
+      <div class="card-body" id="overlap-body"></div>
+    </div>
+
+    <div class="result-card" id="section-dynamics">
+      <h2>٣. ديناميكية الفريق</h2>
+      <div class="card-body" id="dynamics-body"></div>
+    </div>
+
+    <div class="result-card" id="section-communication">
+      <h2>٤. التواصل</h2>
+      <div class="card-body" id="communication-body"></div>
+    </div>
+
+    <div class="result-card" id="section-creativity">
+      <h2>٥. الإبداع المشترك</h2>
+      <div class="card-body" id="creativity-body"></div>
+    </div>
+
+    <div class="result-card" id="section-shadow">
+      <h2>٦. تحذيرات (Shadow Side)</h2>
+      <div class="card-body" id="shadow-body"></div>
+    </div>
+
+    <div class="result-card recommendation" id="section-recommendation">
+      <h2>٧. التوصية الختامية</h2>
+      <div class="card-body" id="recommendation-body"></div>
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>أداة تحليل داخلية — التحليل قائم على قواعد مبنية على نموذج CliftonStrengths 34</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
