@@ -45,11 +45,25 @@ function talentLabel(id) {
   return `${t.ar} (${t.en})`;
 }
 
-function normalizeEnName(str) {
-  return str.toLowerCase().replace(/[^a-z]/g, '');
+function normalizeEnWords(str) {
+  return str
+    .toLowerCase()
+    .replace(/[®™]/g, '')
+    .replace(/[^a-z\- ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-const EN_NAME_LOOKUP = Object.fromEntries(TALENTS.map(t => [normalizeEnName(t.en), t.id]));
+function normalizeArWords(str) {
+  return str
+    .replace(/[ً-ٰٟۖ-ۭ]/g, '')
+    .replace(/ـ/g, '')
+    .replace(/[آأإٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/[^؀-ۿ ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 const DOMAINS = [
   { key: 'executing', ar: 'التنفيذ', dot: 'dot-executing', lead: 'قيادة التنفيذ وتحويل الخطط لنتائج ملموسة على أرض الواقع' },
@@ -77,8 +91,50 @@ const FRICTION_RULES = [
   { pair: ['restorative', 'positivity'], text: 'صاحب الترميم يميل لرؤية المشكلة أولاً بينما صاحب الإيجابية يركز على الجانب المشرق؛ قد يشعر أحدهما أن الآخر يتجاهل الواقع أو يبالغ بالتشاؤم.' },
   { pair: ['command', 'includer'], text: 'صاحب القيادة يحسم القرار بسرعة بينما صاحب الشمول يريد إشراك الجميع بالرأي أولاً؛ قد يشعر الثاني أن رأيه يُتجاوز.' },
   { pair: ['maximizer', 'restorative'], text: 'صاحب التطوير للأفضل يركز جهده على تعزيز نقاط القوة بينما صاحب الترميم يركز على إصلاح نقاط الضعف؛ اختلاف بأولويات التطوير.' },
-  { pair: ['context', 'futuristic'], text: 'صاحب السياق يرجع للماضي كمرجع للقرار بينما صاحب الرؤية المستقبلية يركز للأمام دوماً؛ قد يبدو أحدهما متمسكاً بالماضي والآخر بعيداً عن الواقع الحالي.' }
+  { pair: ['context', 'futuristic'], text: 'صاحب السياق يرجع للماضي كمرجع للقرار بينما صاحب الرؤية المستقبلية يركز للأمام دوماً؛ قد يبدو أحدهما متمسكاً بالماضي والآخر بعيداً عن الواقع الحالي.' },
+  { pair: ['self_assurance', 'includer'], text: 'صاحب الثقة بالنفس يميل لاتخاذ القرار بثقة عالية دون استشارة الجميع بينما صاحب الشمول يريد سماع رأي كل فرد؛ قد يشعر الثاني أن قراراته تُتخذ دون إشراكه الكافي.' },
+  { pair: ['achiever', 'harmony'], text: 'صاحب المنجز يدفع بقوة لإنجاز المهام حتى لو تطلب ذلك نقاشاً حاداً بينما صاحب الانسجام يتجنب أي احتكاك قد يبطئ الإنجاز أو يوتر الأجواء؛ احتكاك حول سرعة اتخاذ القرار مقابل الحفاظ على الانسجام.' },
+  { pair: ['futuristic', 'deliberative'], text: 'صاحب الرؤية المستقبلية متحمس للانطلاق نحو رؤية جديدة بينما صاحب التروي يفضل تقييم المخاطر بعناية قبل أي خطوة؛ قد يرى الأول الثاني متردداً والثاني يرى الأول متسرعاً بالحكم على المستقبل.' },
+  { pair: ['input', 'focus'], text: 'صاحب جمع المعلومات يحب جمع أكبر قدر من المعلومات والموارد قبل التحرك بينما صاحب التركيز يريد الالتزام بمسار واحد محدد سريعاً؛ احتكاك حول متى يكفي التحضير ومتى يبدأ التنفيذ.' },
+  { pair: ['relator', 'woo'], text: 'صاحب بناء العلاقات يفضل دوائر علاقات قليلة وعميقة بينما صاحب كسب الود يستمتع بتوسيع شبكة العلاقات باستمرار؛ قد يشعر الأول أن الثاني سطحي والثاني أن الأول منغلق اجتماعياً.' },
+  { pair: ['responsibility', 'adaptability'], text: 'صاحب المسؤولية يلتزم بوعوده وجداوله بدقة بينما صاحب التكيف يفضل ترك المجال مفتوحاً للتغيير حسب الموقف؛ احتكاك حول الالتزام بالمواعيد المسبقة مقابل المرونة اللحظية.' },
+  { pair: ['significance', 'empathy'], text: 'صاحب التميز يسعى لتحقيق أثر واضح ومُعترف به بينما صاحب التعاطف يعطي أولوية لمشاعر الآخرين حتى لو تراجع تقديره الشخصي؛ قد يرى الأول الثاني متنازلاً كثيراً والثاني يرى الأول أنانياً أحياناً.' }
 ];
+
+const PAIR_SYNERGY_RULES = [
+  { pair: ['achiever', 'arranger'], text: 'صاحب المنجز يوفر الدافع المستمر للعمل، بينما صاحب المرتّب ينظّم الموارد والخطوات بأفضل شكل لتحقيق ذلك الدافع بكفاءة أعلى.' },
+  { pair: ['input', 'connectedness'], text: 'صاحب التجميع يجمع المعلومات والموارد المتفرقة، بينما صاحب الترابط يربطها بمعنى أعمق ويجد الخيط الذي يجمعها؛ توليفة قوية لفهم شامل للموقف.' },
+  { pair: ['ideation', 'analytical'], text: 'صاحب ابتكار الأفكار يولّد احتمالات جديدة باستمرار، بينما صاحب التحليل يفحصها بمنطق ودليل قبل تبنّيها؛ توازن ممتاز بين الإبداع والدقة.' },
+  { pair: ['command', 'relator'], text: 'صاحب التحكّم يحسم المواقف الصعبة بثقة، بينما صاحب بناء العلاقات يحافظ على متانة العلاقة الشخصية رغم الحسم؛ يمنح الفريق قوة قرار دون خسارة الثقة.' },
+  { pair: ['woo', 'deliberative'], text: 'صاحب الودّ يفتح الأبواب ويكسب العلاقات الجديدة بسرعة، بينما صاحب التروي يقيّم بعناية أي هذه العلاقات أو الفرص يستحق الاستثمار فيها فعلاً.' },
+  { pair: ['futuristic', 'achiever'], text: 'صاحب الرؤية المستقبلية يرسم رؤية بعيدة المدى ملهمة، بينما صاحب المنجز يحوّل هذه الرؤية لخطوات عمل يومية ملموسة تُنجز فعلياً.' },
+  { pair: ['strategic', 'activator'], text: 'صاحب التفكير الاستراتيجي يحدد أفضل مسار من بين احتمالات متعددة، بينما صاحب التحريك يدفع لبدء التنفيذ فوراً دون تسويف؛ مزيج ممتاز بين التخطيط الذكي والانطلاق السريع.' },
+  { pair: ['developer', 'maximizer'], text: 'صاحب المطوّر يستمتع برعاية نمو الآخرين من الصفر، بينما صاحب التطوير للأفضل يدفع من هو متميز أصلاً نحو التميز الاستثنائي؛ يغطيان معاً كل مراحل تطوير الفريق.' },
+  { pair: ['discipline', 'developer'], text: 'صاحب الانضباط يضع أنظمة وهياكل واضحة للعمل، بينما صاحب المطوّر يستثمر هذه الهياكل لبناء قدرات الأفراد ضمنها بشكل تدريجي وموثوق.' },
+  { pair: ['empathy', 'command'], text: 'صاحب التعاطف يستشعر ما يحتاجه الآخرون قبل أن يُقال، بينما صاحب التحكّم يترجم ذلك لقرار واضح وحاسم؛ قيادة إنسانية وحازمة في آن واحد.' },
+  { pair: ['learner', 'communication'], text: 'صاحب المتعلّم يكتسب معرفة جديدة باستمرار، بينما صاحب التواصل يعرف كيف يحوّل هذه المعرفة لرسالة مشوّقة وواضحة لبقية الفريق أو الجمهور.' },
+  { pair: ['responsibility', 'woo'], text: 'صاحب المسؤولية يبني الثقة عبر الالتزام الفعلي بالوعود، بينما صاحب كسب الود يوسّع دائرة العلاقات التي يمكن البناء عليها هذه الثقة معها.' },
+  { pair: ['significance', 'includer'], text: 'صاحب التميز يطمح لإنجاز ذي أثر كبير وملحوظ، بينما صاحب الشمول يحرص أن يشعر الجميع بأنهم جزء من هذا الإنجاز لا مجرد متفرجين عليه.' },
+  { pair: ['individualization', 'arranger'], text: 'صاحب الفردية يفهم نقاط تميز كل فرد بدقة، بينما صاحب المرتّب يوزّع الأدوار والمهام بناءً على هذا الفهم لتحقيق أعلى كفاءة ممكنة للفريق.' },
+  { pair: ['positivity', 'analytical'], text: 'صاحب الإيجابية يحافظ على حماس الفريق ومعنوياته خلال التحديات، بينما صاحب التحليل يضمن أن القرارات مبنية على أساس واقعي ومنطقي رغم هذا التفاؤل.' },
+  { pair: ['belief', 'strategic'], text: 'صاحب الاعتقاد يمنح الفريق هدفاً وقيماً ثابتة يعمل من أجلها، بينما صاحب التفكير الاستراتيجي يحدد أفضل طريق عملي لتحقيق هذا الهدف على أرض الواقع.' }
+];
+
+function computePairMatches(list1, list2, rules, limit = 10) {
+  const set1 = new Set(list1.slice(0, limit));
+  const set2 = new Set(list2.slice(0, limit));
+  const matches = [];
+  rules.forEach(rule => {
+    const [a, b] = rule.pair;
+    if (set1.has(a) && set2.has(b)) matches.push({ id1: a, id2: b, text: rule.text });
+    else if (set1.has(b) && set2.has(a)) matches.push({ id1: b, id2: a, text: rule.text });
+  });
+  return matches;
+}
+
+function leadTalentInDomain(talentIds, domainKey) {
+  return talentIds.find(id => TALENT_MAP[id].domain === domainKey) || null;
+}
 
 const SHADOW_DOUBLE_LOOKUP = {
   achiever: 'كلاكما يمتلك موهبة المنجز بقوة، ما يعني خطر الإرهاق (burnout) لأن كليكما لا يعرف متى يتوقف عن العمل أو يمنح نفسه استراحة كافية.',
@@ -328,34 +384,63 @@ function topSet(talentIds, n) {
   return new Set(talentIds.slice(0, Math.min(n, talentIds.length)));
 }
 
-const RANKED_LINE_RE = /^(\d{1,2})\.\s*([A-Za-z][A-Za-z\- ]*?)\s*(?:®|™)?\s*$/;
+const RANKED_LINE_RE = /^(\d{1,2})[.)]\s*(.+)$/;
+const ARABIC_DIGIT_MAP = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
 
-function extractRankedNamesFromText(text) {
-  const lines = text.split('\n').map(l => l.trim());
+function normalizeLine(line) {
+  return line
+    .replace(/[٠-٩]/g, d => ARABIC_DIGIT_MAP[d])
+    .replace(/\u00A0/g, ' ')
+    .trim();
+}
+
+function matchTalentPrefix(rest) {
+  const restEn = normalizeEnWords(rest);
+  const restAr = normalizeArWords(rest);
+  let bestId = null;
+  let bestLen = -1;
+
+  TALENTS.forEach(t => {
+    const nameEn = normalizeEnWords(t.en);
+    if (nameEn && (restEn === nameEn || restEn.startsWith(nameEn + ' ')) && nameEn.length > bestLen) {
+      bestId = t.id;
+      bestLen = nameEn.length;
+    }
+  });
+  if (bestId) return bestId;
+
+  TALENTS.forEach(t => {
+    const nameAr = normalizeArWords(t.ar);
+    if (nameAr && (restAr === nameAr || restAr.startsWith(nameAr + ' ')) && nameAr.length > bestLen) {
+      bestId = t.id;
+      bestLen = nameAr.length;
+    }
+  });
+  return bestId;
+}
+
+function extractRankedTalentIdsFromText(text) {
+  const lines = text.split('\n').map(normalizeLine);
   const matches = [];
   lines.forEach(line => {
     const m = line.match(RANKED_LINE_RE);
-    if (m) matches.push({ num: parseInt(m[1], 10), name: m[2].trim() });
+    if (!m) return;
+    const id = matchTalentPrefix(m[2]);
+    if (id) matches.push({ num: parseInt(m[1], 10), id });
   });
 
   let best = [];
   let current = [];
   matches.forEach(m => {
     if (current.length && m.num === current.length + 1) {
-      current.push(m.name);
+      current.push(m.id);
     } else {
       if (current.length > best.length) best = current;
-      current = m.num === 1 ? [m.name] : [];
+      current = m.num === 1 ? [m.id] : [];
     }
   });
   if (current.length > best.length) best = current;
   return best;
-}
-
-function mapNamesToTalentIds(names) {
-  return names
-    .map(name => EN_NAME_LOOKUP[normalizeEnName(name)])
-    .filter(Boolean);
 }
 
 async function getPdfFullText(file) {
@@ -380,8 +465,7 @@ async function handlePdfUpload(personNum, file) {
   status.classList.remove('error');
   try {
     const text = await getPdfFullText(file);
-    const names = extractRankedNamesFromText(text);
-    const ids = mapNamesToTalentIds(names);
+    const ids = extractRankedTalentIdsFromText(text);
 
     if (ids.length < 5) {
       status.textContent = 'لم يتم التعرف على ترتيب مواهب صالح داخل هذا الملف.';
@@ -410,7 +494,84 @@ function renderDomainsSection(p1Name, p2Name, s1, s2) {
   return html;
 }
 
-function renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames) {
+function renderConnectionMapSection(p1Name, p2Name, arr1, arr2, sharedTalentIds, synergyMatches, frictionMatches) {
+  const rowHeight = 34;
+  const topMargin = 26;
+  const width = 640;
+  const maxRows = Math.max(arr1.length, arr2.length, 1);
+  const height = topMargin + maxRows * rowHeight + 10;
+  const rightX = width - 130;
+  const leftX = 130;
+
+  const pos1 = {};
+  const pos2 = {};
+  arr1.forEach((id, i) => { pos1[id] = topMargin + i * rowHeight; });
+  arr2.forEach((id, i) => { pos2[id] = topMargin + i * rowHeight; });
+
+  const lines = [];
+  sharedTalentIds.forEach(id => {
+    if (pos1[id] !== undefined && pos2[id] !== undefined) {
+      lines.push({ y1: pos1[id], y2: pos2[id], cls: 'map-line-shared' });
+    }
+  });
+  synergyMatches.forEach(m => {
+    if (pos1[m.id1] !== undefined && pos2[m.id2] !== undefined) {
+      lines.push({ y1: pos1[m.id1], y2: pos2[m.id2], cls: 'map-line-synergy' });
+    }
+  });
+  frictionMatches.forEach(m => {
+    if (pos1[m.id1] !== undefined && pos2[m.id2] !== undefined) {
+      lines.push({ y1: pos1[m.id1], y2: pos2[m.id2], cls: 'map-line-friction' });
+    }
+  });
+
+  let svg = `<svg class="connection-map-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+
+  lines.forEach(l => {
+    svg += `<line x1="${rightX}" y1="${l.y1}" x2="${leftX}" y2="${l.y2}" class="${l.cls}" />`;
+  });
+
+  arr1.forEach((id, i) => {
+    const y = topMargin + i * rowHeight;
+    svg += `<circle cx="${rightX}" cy="${y}" r="5" class="map-dot p1" />`;
+    svg += `<text x="${rightX - 12}" y="${y + 4}" class="map-label" text-anchor="end" direction="rtl">${escapeHtml(talentLabel(id))}</text>`;
+  });
+
+  arr2.forEach((id, i) => {
+    const y = topMargin + i * rowHeight;
+    svg += `<circle cx="${leftX}" cy="${y}" r="5" class="map-dot p2" />`;
+    svg += `<text x="${leftX + 12}" y="${y + 4}" class="map-label" text-anchor="start" direction="rtl">${escapeHtml(talentLabel(id))}</text>`;
+  });
+
+  svg += `<text x="${rightX}" y="16" class="map-col-title" text-anchor="end">${escapeHtml(p1Name)}</text>`;
+  svg += `<text x="${leftX}" y="16" class="map-col-title" text-anchor="start">${escapeHtml(p2Name)}</text>`;
+  svg += `</svg>`;
+
+  const legend = `<div class="map-legend">
+    <span class="legend-item"><span class="legend-swatch legend-shared"></span> موهبة مشتركة</span>
+    <span class="legend-item"><span class="legend-swatch legend-synergy"></span> تكامل إيجابي</span>
+    <span class="legend-item"><span class="legend-swatch legend-friction"></span> احتكاك محتمل</span>
+  </div>`;
+
+  let tableRows = '';
+  sharedTalentIds.forEach(id => {
+    tableRows += `<tr><td>مشترك</td><td colspan="2">${escapeHtml(talentLabel(id))}</td><td>لغة مشتركة تسهّل التفاهم السريع بينكما.</td></tr>`;
+  });
+  synergyMatches.forEach(m => {
+    tableRows += `<tr><td>تكامل</td><td>${escapeHtml(talentLabel(m.id1))} (${escapeHtml(p1Name)})</td><td>${escapeHtml(talentLabel(m.id2))} (${escapeHtml(p2Name)})</td><td>${m.text}</td></tr>`;
+  });
+  frictionMatches.forEach(m => {
+    tableRows += `<tr><td>احتكاك</td><td>${escapeHtml(talentLabel(m.id1))} (${escapeHtml(p1Name)})</td><td>${escapeHtml(talentLabel(m.id2))} (${escapeHtml(p2Name)})</td><td>${m.text}</td></tr>`;
+  });
+
+  const table = tableRows
+    ? `<table class="dynamics-table map-table"><thead><tr><th>النوع</th><th>موهبة ${escapeHtml(p1Name)}</th><th>موهبة ${escapeHtml(p2Name)}</th><th>التفسير</th></tr></thead><tbody>${tableRows}</tbody></table>`
+    : `<p>لا توجد علاقات بارزة بين أبرز مواهب الطرفين ضمن القواعد الحالية.</p>`;
+
+  return `<div class="map-wrap">${svg}</div>${legend}${table}`;
+}
+
+function renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames, synergyMatches) {
   const isStrong = (scores, ranked, key) => ranked.slice(0, 2).includes(key) && scores[key] > 0;
 
   const sharedStrength = [];
@@ -445,6 +606,11 @@ function renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames) {
     ? `<ul>${complementary.map(c => `<li><strong>${escapeHtml(c.domain.ar)}</strong>: نقطة قوة عند ${escapeHtml(c.strong)} ونقطة ضعف نسبية عند ${escapeHtml(c.weak)}، ما يعني أن هذه الفجوة عند ${escapeHtml(c.weak)} مغطاة من جهة ${escapeHtml(c.strong)}.</li>`).join('')}</ul>`
     : `<p>لا يوجد تكامل واضح على مستوى الدومينز بين الطرفين حالياً.</p>`;
 
+  html += '<div class="subhead">تكامل على مستوى المواهب الفردية</div>';
+  html += synergyMatches.length
+    ? `<ul>${synergyMatches.map(m => `<li><strong>${escapeHtml(talentLabel(m.id1))}</strong> + <strong>${escapeHtml(talentLabel(m.id2))}</strong>: ${m.text}</li>`).join('')}</ul>`
+    : `<p>لا توجد توليفة مواهب معروفة بينهما ضمن قواعد التكامل الفردي حالياً، لكن هذا لا ينفي وجود تكامل على مستوى الدومينز أعلاه.</p>`;
+
   html += '<div class="subhead">الفجوات المشتركة (تحتاج طرف ثالث)</div>';
   html += sharedGap.length
     ? `<ul>${sharedGap.map(d => `<li><strong>${escapeHtml(d.ar)}</strong>: كلا الطرفين ضعيف نسبياً فيه، ولا أحد يغطي هذه الفجوة عن الآخر.</li>`).join('')}</ul>`
@@ -453,15 +619,29 @@ function renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames) {
   return { html, sharedGap };
 }
 
-function renderDynamicsSection(p1Name, p2Name, s1, s2) {
+function renderDynamicsSection(p1Name, p2Name, s1, s2, talents1, talents2) {
   let rows = '';
   DOMAINS.forEach(d => {
     const v1 = s1.percents[d.key];
     const v2 = s2.percents[d.key];
-    let leader;
-    if (Math.abs(v1 - v2) < 5) leader = 'متكافئ بينهما';
-    else leader = v1 > v2 ? escapeHtml(p1Name) : escapeHtml(p2Name);
-    rows += `<tr><td>${escapeHtml(d.ar)}</td><td>${v1}%</td><td>${v2}%</td><td>${leader}</td><td>${escapeHtml(d.lead)}</td></tr>`;
+    const lead1 = leadTalentInDomain(talents1, d.key);
+    const lead2 = leadTalentInDomain(talents2, d.key);
+    let leader, detail;
+
+    if (Math.abs(v1 - v2) < 5) {
+      leader = 'متكافئ بينهما';
+      const parts = [];
+      if (lead1) parts.push(`${escapeHtml(p1Name)}: ${escapeHtml(talentLabel(lead1))}`);
+      if (lead2) parts.push(`${escapeHtml(p2Name)}: ${escapeHtml(talentLabel(lead2))}`);
+      detail = `${escapeHtml(d.lead)}${parts.length ? ' — أبرز موهبة لكل طرف هنا: ' + parts.join('، ') : ''}`;
+    } else {
+      const leaderIsP1 = v1 > v2;
+      leader = leaderIsP1 ? escapeHtml(p1Name) : escapeHtml(p2Name);
+      const leadTalent = leaderIsP1 ? lead1 : lead2;
+      detail = `${escapeHtml(d.lead)}${leadTalent ? ' — أبرز ما يقود به: ' + escapeHtml(talentLabel(leadTalent)) : ''}`;
+    }
+
+    rows += `<tr><td>${escapeHtml(d.ar)}</td><td>${v1}%</td><td>${v2}%</td><td>${leader}</td><td>${detail}</td></tr>`;
   });
 
   let html = `<table class="dynamics-table">
@@ -485,23 +665,15 @@ function renderDynamicsSection(p1Name, p2Name, s1, s2) {
   return html;
 }
 
-function renderCommunicationSection(p1Name, p2Name, top1, top2, sharedTalentNames) {
-  const triggered = [];
-  FRICTION_RULES.forEach(rule => {
-    const [a, b] = rule.pair;
-    if ((top1.has(a) && top2.has(b)) || (top1.has(b) && top2.has(a))) {
-      triggered.push(rule.text);
-    }
-  });
-
+function renderCommunicationSection(p1Name, p2Name, frictionMatches, sharedTalentNames) {
   let html = '';
   if (sharedTalentNames.length) {
     html += `<p>امتلاككما لموهبة ${sharedTalentNames.map(n => `<strong>${escapeHtml(n)}</strong>`).join('، ')} المشتركة يمنحكما لغة مشتركة وفهماً سريعاً لبعضكما في هذا الجانب.</p>`;
   }
 
   html += '<div class="subhead">نقاط الاحتكاك المحتملة</div>';
-  if (triggered.length) {
-    html += `<ul>${triggered.map(t => `<li>${t}</li>`).join('')}</ul>`;
+  if (frictionMatches.length) {
+    html += `<ul>${frictionMatches.map(m => `<li>${m.text}</li>`).join('')}</ul>`;
   } else {
     html += `<p>لا توجد أنماط احتكاك معروفة بارزة بين أبرز مواهبكما، وهذا مؤشر جيد لسهولة التواصل بينكما.</p>`;
   }
@@ -524,15 +696,20 @@ function renderCreativitySection(p1Name, p2Name, top1, top2) {
   let html = '';
 
   if (p1HasIdeation && p2HasIdeation) {
-    html += `<p>كلاكما يميل لتوليد أفكار جديدة باستمرار؛ احرصا أن يتولى أحدكما دور التقييم والتنفيذ حتى لا تبقى الأفكار نظرية بلا تطبيق.</p>`;
+    html += `<p>كلاكما يمتلك موهبة ${escapeHtml(talentLabel('ideation'))} ويميل لتوليد أفكار جديدة باستمرار؛ احرصا أن يتولى أحدكما دور التقييم والتنفيذ حتى لا تبقى الأفكار نظرية بلا تطبيق.</p>`;
   } else if ((p1HasIdeation && p2HasEvaluator) || (p2HasIdeation && p1HasEvaluator)) {
     const ideator = p1HasIdeation ? p1Name : p2Name;
     const evaluator = p1HasIdeation ? p2Name : p1Name;
-    html += `<p>توليفة قوية للإبداع: إطلاق الأفكار الجديدة يأتي من جهة ${escapeHtml(ideator)}، بينما يتم تقييمها بعمق من جهة ${escapeHtml(evaluator)} قبل التنفيذ، ما ينتج إبداعاً متوازناً بين التوليد والتمحيص.</p>`;
+    const evaluatorTop = p1HasIdeation ? top2 : top1;
+    const evaluatorTalentId = evaluatorTop.has('strategic') ? 'strategic' : 'analytical';
+    html += `<p>توليفة قوية للإبداع: إطلاق الأفكار الجديدة (${escapeHtml(talentLabel('ideation'))}) يأتي من جهة ${escapeHtml(ideator)}، بينما يتم تقييمها بعمق (${escapeHtml(talentLabel(evaluatorTalentId))}) من جهة ${escapeHtml(evaluator)} قبل التنفيذ، ما ينتج إبداعاً متوازناً بين التوليد والتمحيص.</p>`;
   } else if (p1ST.length === 0 && p2ST.length === 0) {
     html += `<p>لا توجد مواهب من مجال التفكير الاستراتيجي ضمن أبرز مواهب أي منكما؛ إبداعكما المشترك سيكون غالباً عملياً وتحسينياً (تطوير على شيء قائم) أكثر من كونه ابتكاراً جذرياً من الصفر. عند الحاجة لأفكار جديدة كلياً، استعينا بطرف ثالث أو أدوات خارجية مثل ورش العمل الجماعية أو البيانات والأبحاث.</p>`;
   } else {
-    html += `<p>يمتلك أحدكما على الأقل مواهب من مجال التفكير الاستراتيجي، ما يمنح الثنائي قدرة على التفكير بعمق قبل التنفيذ، لكن تأكدا من إشراك الطرف الآخر بشكل فعّال في هذه المرحلة حتى لا يتحول التفكير لمجهود فردي.</p>`;
+    const namesInfo = [];
+    if (p1ST.length) namesInfo.push(`${escapeHtml(p1Name)}: ${p1ST.map(id => escapeHtml(talentLabel(id))).join('، ')}`);
+    if (p2ST.length) namesInfo.push(`${escapeHtml(p2Name)}: ${p2ST.map(id => escapeHtml(talentLabel(id))).join('، ')}`);
+    html += `<p>يمتلك أحدكما على الأقل مواهب من مجال التفكير الاستراتيجي (${namesInfo.join(' — ')})، ما يمنح الثنائي قدرة على التفكير بعمق قبل التنفيذ، لكن تأكدا من إشراك الطرف الآخر بشكل فعّال في هذه المرحلة حتى لا يتحول التفكير لمجهود فردي.</p>`;
   }
 
   return html;
@@ -576,22 +753,32 @@ function analyze() {
   const p1Name = getPersonName(1);
   const p2Name = getPersonName(2);
 
-  const s1 = computeDomainScores(state[1].talents);
-  const s2 = computeDomainScores(state[2].talents);
+  const talents1 = state[1].talents;
+  const talents2 = state[2].talents;
 
-  const top1 = topSet(state[1].talents, 10);
-  const top2 = topSet(state[2].talents, 10);
+  const s1 = computeDomainScores(talents1);
+  const s2 = computeDomainScores(talents2);
+
+  const top1 = topSet(talents1, 10);
+  const top2 = topSet(talents2, 10);
 
   const sharedTalentIds = [...top1].filter(id => top2.has(id));
   const sharedTalentNames = sharedTalentIds.map(id => talentLabel(id));
 
+  const synergyMatches = computePairMatches(talents1, talents2, PAIR_SYNERGY_RULES);
+  const frictionMatches = computePairMatches(talents1, talents2, FRICTION_RULES);
+
   document.getElementById('domains-body').innerHTML = renderDomainsSection(p1Name, p2Name, s1, s2);
 
-  const overlap = renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames);
+  document.getElementById('map-body').innerHTML = renderConnectionMapSection(
+    p1Name, p2Name, talents1.slice(0, 8), talents2.slice(0, 8), sharedTalentIds, synergyMatches, frictionMatches
+  );
+
+  const overlap = renderOverlapSection(p1Name, p2Name, s1, s2, sharedTalentNames, synergyMatches);
   document.getElementById('overlap-body').innerHTML = overlap.html;
 
-  document.getElementById('dynamics-body').innerHTML = renderDynamicsSection(p1Name, p2Name, s1, s2);
-  document.getElementById('communication-body').innerHTML = renderCommunicationSection(p1Name, p2Name, top1, top2, sharedTalentNames);
+  document.getElementById('dynamics-body').innerHTML = renderDynamicsSection(p1Name, p2Name, s1, s2, talents1, talents2);
+  document.getElementById('communication-body').innerHTML = renderCommunicationSection(p1Name, p2Name, frictionMatches, sharedTalentNames);
   document.getElementById('creativity-body').innerHTML = renderCreativitySection(p1Name, p2Name, top1, top2);
   document.getElementById('shadow-body').innerHTML = renderShadowSection(p1Name, p2Name, sharedTalentIds);
   document.getElementById('recommendation-body').innerHTML = renderRecommendationSection(p1Name, p2Name, overlap.sharedGap);

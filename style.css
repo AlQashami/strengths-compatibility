@@ -505,3 +505,77 @@ body {
   color: var(--muted);
   font-size: 0.82rem;
 }
+
+.map-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.connection-map-svg {
+  width: 100%;
+  height: auto;
+  min-width: 480px;
+  display: block;
+}
+
+.map-dot.p1 { fill: var(--person1); }
+.map-dot.p2 { fill: var(--person2); }
+
+.map-label {
+  font-size: 12px;
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', Tahoma, sans-serif;
+  fill: var(--ink);
+}
+
+.map-col-title {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', Tahoma, sans-serif;
+  fill: var(--burgundy-700);
+}
+
+.map-line-shared {
+  stroke: var(--gold-500);
+  stroke-width: 2.5;
+}
+
+.map-line-synergy {
+  stroke: var(--burgundy-500);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 4;
+}
+
+.map-line-friction {
+  stroke: var(--burgundy-900);
+  stroke-width: 1.6;
+  stroke-dasharray: 2 3;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.legend-shared { background: var(--gold-500); }
+.legend-synergy { background: var(--burgundy-500); }
+.legend-friction { background: var(--burgundy-900); }
+
+.map-table { margin-top: 0.5rem; }
