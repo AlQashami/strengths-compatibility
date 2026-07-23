@@ -1,44 +1,55 @@
 const TALENTS = [
-  { id: 'achiever', ar: 'المنجز', domain: 'executing' },
-  { id: 'arranger', ar: 'المنظّم', domain: 'executing' },
-  { id: 'belief', ar: 'الإيمان', domain: 'executing' },
-  { id: 'consistency', ar: 'الاتساق', domain: 'executing' },
-  { id: 'deliberative', ar: 'التروي', domain: 'executing' },
-  { id: 'discipline', ar: 'الانضباط', domain: 'executing' },
-  { id: 'focus', ar: 'التركيز', domain: 'executing' },
-  { id: 'responsibility', ar: 'المسؤولية', domain: 'executing' },
-  { id: 'restorative', ar: 'الترميم', domain: 'executing' },
+  { id: 'achiever', ar: 'المنجز', en: 'Achiever', domain: 'executing' },
+  { id: 'arranger', ar: 'المرتّب', en: 'Arranger', domain: 'executing' },
+  { id: 'belief', ar: 'الاعتقاد', en: 'Belief', domain: 'executing' },
+  { id: 'consistency', ar: 'الثبات', en: 'Consistency', domain: 'executing' },
+  { id: 'deliberative', ar: 'التأنّي', en: 'Deliberative', domain: 'executing' },
+  { id: 'discipline', ar: 'الانضباط', en: 'Discipline', domain: 'executing' },
+  { id: 'focus', ar: 'التركيز', en: 'Focus', domain: 'executing' },
+  { id: 'responsibility', ar: 'المسؤولية', en: 'Responsibility', domain: 'executing' },
+  { id: 'restorative', ar: 'المُصلح', en: 'Restorative', domain: 'executing' },
 
-  { id: 'activator', ar: 'التحريك', domain: 'influencing' },
-  { id: 'command', ar: 'القيادة', domain: 'influencing' },
-  { id: 'communication', ar: 'التواصل', domain: 'influencing' },
-  { id: 'competition', ar: 'المنافسة', domain: 'influencing' },
-  { id: 'maximizer', ar: 'التطوير للأفضل', domain: 'influencing' },
-  { id: 'self_assurance', ar: 'الثقة بالذات', domain: 'influencing' },
-  { id: 'significance', ar: 'التميز', domain: 'influencing' },
-  { id: 'woo', ar: 'كسب الود', domain: 'influencing' },
+  { id: 'activator', ar: 'المنشّط', en: 'Activator', domain: 'influencing' },
+  { id: 'command', ar: 'التحكّم', en: 'Command', domain: 'influencing' },
+  { id: 'communication', ar: 'التواصل', en: 'Communication', domain: 'influencing' },
+  { id: 'competition', ar: 'المنافسة', en: 'Competition', domain: 'influencing' },
+  { id: 'maximizer', ar: 'المُتقن', en: 'Maximizer', domain: 'influencing' },
+  { id: 'self_assurance', ar: 'الثقة بالنفس', en: 'Self-Assurance', domain: 'influencing' },
+  { id: 'significance', ar: 'الأهمية', en: 'Significance', domain: 'influencing' },
+  { id: 'woo', ar: 'الودّ', en: 'Woo', domain: 'influencing' },
 
-  { id: 'adaptability', ar: 'التكيف', domain: 'relationship' },
-  { id: 'connectedness', ar: 'الترابط', domain: 'relationship' },
-  { id: 'developer', ar: 'تنمية الآخرين', domain: 'relationship' },
-  { id: 'empathy', ar: 'التعاطف', domain: 'relationship' },
-  { id: 'harmony', ar: 'الانسجام', domain: 'relationship' },
-  { id: 'includer', ar: 'الشمول', domain: 'relationship' },
-  { id: 'individualization', ar: 'الفردية', domain: 'relationship' },
-  { id: 'positivity', ar: 'الإيجابية', domain: 'relationship' },
-  { id: 'relator', ar: 'بناء العلاقات', domain: 'relationship' },
+  { id: 'adaptability', ar: 'التكيّف', en: 'Adaptability', domain: 'relationship' },
+  { id: 'connectedness', ar: 'الترابط', en: 'Connectedness', domain: 'relationship' },
+  { id: 'developer', ar: 'المطوّر', en: 'Developer', domain: 'relationship' },
+  { id: 'empathy', ar: 'إدراك المشاعر', en: 'Empathy', domain: 'relationship' },
+  { id: 'harmony', ar: 'التوافق', en: 'Harmony', domain: 'relationship' },
+  { id: 'includer', ar: 'المُحتوي', en: 'Includer', domain: 'relationship' },
+  { id: 'individualization', ar: 'التفرّد', en: 'Individualization', domain: 'relationship' },
+  { id: 'positivity', ar: 'التفاؤل', en: 'Positivity', domain: 'relationship' },
+  { id: 'relator', ar: 'عميق العلاقة', en: 'Relator', domain: 'relationship' },
 
-  { id: 'analytical', ar: 'التحليل', domain: 'strategic' },
-  { id: 'context', ar: 'السياق', domain: 'strategic' },
-  { id: 'futuristic', ar: 'الرؤية المستقبلية', domain: 'strategic' },
-  { id: 'ideation', ar: 'توليد الأفكار', domain: 'strategic' },
-  { id: 'input', ar: 'جمع المعلومات', domain: 'strategic' },
-  { id: 'intellection', ar: 'التفكر', domain: 'strategic' },
-  { id: 'learner', ar: 'التعلم', domain: 'strategic' },
-  { id: 'strategic', ar: 'التفكير الاستراتيجي', domain: 'strategic' }
+  { id: 'analytical', ar: 'التحليل', en: 'Analytical', domain: 'strategic' },
+  { id: 'context', ar: 'السياق', en: 'Context', domain: 'strategic' },
+  { id: 'futuristic', ar: 'المستقبلي', en: 'Futuristic', domain: 'strategic' },
+  { id: 'ideation', ar: 'ابتكار الأفكار', en: 'Ideation', domain: 'strategic' },
+  { id: 'input', ar: 'التجميع', en: 'Input', domain: 'strategic' },
+  { id: 'intellection', ar: 'الفكر', en: 'Intellection', domain: 'strategic' },
+  { id: 'learner', ar: 'المُتعلّم', en: 'Learner', domain: 'strategic' },
+  { id: 'strategic', ar: 'الاستراتيجي', en: 'Strategic', domain: 'strategic' }
 ];
 
 const TALENT_MAP = Object.fromEntries(TALENTS.map(t => [t.id, t]));
+
+function talentLabel(id) {
+  const t = TALENT_MAP[id];
+  return `${t.ar} (${t.en})`;
+}
+
+function normalizeEnName(str) {
+  return str.toLowerCase().replace(/[^a-z]/g, '');
+}
+
+const EN_NAME_LOOKUP = Object.fromEntries(TALENTS.map(t => [normalizeEnName(t.en), t.id]));
 
 const DOMAINS = [
   { key: 'executing', ar: 'التنفيذ', dot: 'dot-executing', lead: 'قيادة التنفيذ وتحويل الخطط لنتائج ملموسة على أرض الواقع' },
@@ -115,9 +126,10 @@ function buildDropdown(personNum, query) {
   const grouped = {};
   DOMAINS.forEach(d => grouped[d.key] = []);
 
+  const qLower = q.toLowerCase();
   TALENTS.forEach(t => {
     if (added.has(t.id)) return;
-    if (q && !t.ar.includes(q)) return;
+    if (q && !t.ar.includes(q) && !t.en.toLowerCase().includes(qLower)) return;
     grouped[t.domain].push(t);
   });
 
@@ -128,7 +140,7 @@ function buildDropdown(personNum, query) {
     hasAny = true;
     html += `<div class="dropdown-group-label">${escapeHtml(d.ar)}</div>`;
     grouped[d.key].forEach(t => {
-      html += `<div class="dropdown-item" data-id="${t.id}"><span class="domain-dot ${d.dot}"></span><span>${escapeHtml(t.ar)}</span></div>`;
+      html += `<div class="dropdown-item" data-id="${t.id}"><span class="domain-dot ${d.dot}"></span><span>${escapeHtml(talentLabel(t.id))}</span></div>`;
     });
   });
 
@@ -175,7 +187,7 @@ function renderPersonList(personNum) {
     return `<li>
       <span class="rank-badge">${i + 1}</span>
       <span class="domain-dot ${d.dot}"></span>
-      <span class="talent-item-name">${escapeHtml(t.ar)}</span>
+      <span class="talent-item-name">${escapeHtml(talentLabel(t.id))}</span>
       <span class="item-actions">
         <button data-action="up" data-index="${i}" title="تحريك لأعلى">▲</button>
         <button data-action="down" data-index="${i}" title="تحريك لأسفل">▼</button>
@@ -314,6 +326,76 @@ function computeDomainScores(talentIds) {
 
 function topSet(talentIds, n) {
   return new Set(talentIds.slice(0, Math.min(n, talentIds.length)));
+}
+
+const RANKED_LINE_RE = /^(\d{1,2})\.\s*([A-Za-z][A-Za-z\- ]*?)\s*(?:®|™)?\s*$/;
+
+function extractRankedNamesFromText(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  const matches = [];
+  lines.forEach(line => {
+    const m = line.match(RANKED_LINE_RE);
+    if (m) matches.push({ num: parseInt(m[1], 10), name: m[2].trim() });
+  });
+
+  let best = [];
+  let current = [];
+  matches.forEach(m => {
+    if (current.length && m.num === current.length + 1) {
+      current.push(m.name);
+    } else {
+      if (current.length > best.length) best = current;
+      current = m.num === 1 ? [m.name] : [];
+    }
+  });
+  if (current.length > best.length) best = current;
+  return best;
+}
+
+function mapNamesToTalentIds(names) {
+  return names
+    .map(name => EN_NAME_LOOKUP[normalizeEnName(name)])
+    .filter(Boolean);
+}
+
+async function getPdfFullText(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    content.items.forEach(item => {
+      fullText += item.str;
+      fullText += item.hasEOL ? '\n' : ' ';
+    });
+    fullText += '\n';
+  }
+  return fullText;
+}
+
+async function handlePdfUpload(personNum, file) {
+  const status = document.getElementById(`pdf-status-${personNum}`);
+  status.textContent = 'جارِ قراءة الملف...';
+  status.classList.remove('error');
+  try {
+    const text = await getPdfFullText(file);
+    const names = extractRankedNamesFromText(text);
+    const ids = mapNamesToTalentIds(names);
+
+    if (ids.length < 5) {
+      status.textContent = 'لم يتم التعرف على ترتيب مواهب صالح داخل هذا الملف.';
+      status.classList.add('error');
+      return;
+    }
+
+    state[personNum].talents = ids;
+    renderPersonList(personNum);
+    status.textContent = `تمت تعبئة ${ids.length} موهبة تلقائياً من الملف.`;
+  } catch (e) {
+    status.textContent = 'تعذّرت قراءة الملف، تأكد أنه تقرير CliftonStrengths بصيغة PDF.';
+    status.classList.add('error');
+  }
 }
 
 function renderDomainsSection(p1Name, p2Name, s1, s2) {
@@ -462,7 +544,7 @@ function renderShadowSection(p1Name, p2Name, sharedTalentIds) {
   }
 
   const items = sharedTalentIds.map(id => {
-    const name = TALENT_MAP[id].ar;
+    const name = talentLabel(id);
     const specific = SHADOW_DOUBLE_LOOKUP[id];
     const text = specific || `قوة "${escapeHtml(name)}" مضاعفة عند الطرفين يعني ميلاً مشتركاً لنفس السلوك دون طرف يوازنه؛ راقبا المبالغة فيه دون رقيب داخلي للفريق.`;
     return `<li><strong>${escapeHtml(name)}</strong>: ${text}</li>`;
@@ -478,7 +560,7 @@ function renderRecommendationSection(p1Name, p2Name, sharedGapDomains) {
 
   const domainList = sharedGapDomains.map(d => `<strong>${escapeHtml(d.ar)}</strong>`).join(' و');
   const suggestions = sharedGapDomains.map(d => {
-    const talentNames = DOMAIN_GAP_SUGGESTIONS[d.key].map(id => TALENT_MAP[id].ar).join('، ');
+    const talentNames = DOMAIN_GAP_SUGGESTIONS[d.key].map(id => talentLabel(id)).join('، ');
     return `<li>لتغطية دومين "${escapeHtml(d.ar)}": ابحثا عن عضو ثالث تبرز عنده مواهب مثل ${talentNames}.</li>`;
   }).join('');
 
@@ -501,7 +583,7 @@ function analyze() {
   const top2 = topSet(state[2].talents, 10);
 
   const sharedTalentIds = [...top1].filter(id => top2.has(id));
-  const sharedTalentNames = sharedTalentIds.map(id => TALENT_MAP[id].ar);
+  const sharedTalentNames = sharedTalentIds.map(id => talentLabel(id));
 
   document.getElementById('domains-body').innerHTML = renderDomainsSection(p1Name, p2Name, s1, s2);
 
@@ -545,9 +627,18 @@ function initPersonPanel(n) {
   document.getElementById(`save-${n}`).addEventListener('click', () => saveProfile(n));
   document.getElementById(`load-${n}`).addEventListener('click', () => loadProfile(n));
   document.getElementById(`delete-${n}`).addEventListener('click', () => deleteProfile(n));
+
+  document.getElementById(`pdf-upload-${n}`).addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handlePdfUpload(n, file);
+    e.target.value = '';
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
   initPersonPanel(1);
   initPersonPanel(2);
   renderSavedProfiles();

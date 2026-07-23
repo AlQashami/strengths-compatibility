@@ -31,6 +31,12 @@
         <div class="talent-dropdown hidden" id="dropdown-1"></div>
       </div>
 
+      <div class="pdf-upload-row">
+        <label class="pdf-upload-btn" for="pdf-upload-1">📄 رفع تقرير Gallup (PDF) — تعبئة تلقائية</label>
+        <input type="file" id="pdf-upload-1" accept="application/pdf" class="pdf-upload-input">
+        <p class="pdf-upload-status" id="pdf-status-1"></p>
+      </div>
+
       <div class="list-head">
         <span>الترتيب الحالي</span>
         <span class="count-tag" id="count-1">0 مواهب</span>
@@ -61,6 +67,12 @@
         <label>أضف موهبة</label>
         <input type="text" class="talent-search" data-person="2" placeholder="اكتب اسم الموهبة أو اختر من القائمة...">
         <div class="talent-dropdown hidden" id="dropdown-2"></div>
+      </div>
+
+      <div class="pdf-upload-row">
+        <label class="pdf-upload-btn" for="pdf-upload-2">📄 رفع تقرير Gallup (PDF) — تعبئة تلقائية</label>
+        <input type="file" id="pdf-upload-2" accept="application/pdf" class="pdf-upload-input">
+        <p class="pdf-upload-status" id="pdf-status-2"></p>
       </div>
 
       <div class="list-head">
@@ -135,6 +147,7 @@
   <p>أداة تحليل داخلية — التحليل قائم على قواعد مبنية على نموذج CliftonStrengths 34</p>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -189,6 +189,42 @@ body {
 .dot-relationship { background: var(--domain-relationship); }
 .dot-strategic { background: var(--domain-strategic); }
 
+.pdf-upload-row {
+  margin-bottom: 1rem;
+}
+
+.pdf-upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.pdf-upload-btn {
+  display: block;
+  text-align: center;
+  cursor: pointer;
+  background: var(--burgundy-100);
+  color: var(--burgundy-700);
+  border: 1px dashed var(--burgundy-500);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.pdf-upload-btn:hover { background: var(--gold-300); }
+
+.pdf-upload-status {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.pdf-upload-status.error { color: var(--burgundy-500); font-weight: 700; }
+
 .list-head {
   display: flex;
   justify-content: space-between;
